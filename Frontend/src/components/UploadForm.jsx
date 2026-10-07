@@ -1,85 +1,128 @@
-import React, { useState } from 'react';
-import API from '../services/api';
+import React, { useState, useRef } from 'react';
+import API from '../services/api.js';
 
 const UploadForm = ({ onUploadSuccess }) => {
-  const [title, setTitle] = useState('');
+  const [docType, setDocType] = useState('Aadhar');
   const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [uploadedTypes, setUploadedTypes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  
+  // Ref for the file input element to clear it after upload
+  const fileInputRef = useRef(null);
+  
+  // Ref to track the active timeout so we can clear it if a new upload starts
+  const timeoutRef = useRef(null);
 
-  // Handle file input changes
+  const allDocTypes = ['Aadhar', 'Pan', 'DL'];
+  const availableOptions = allDocTypes.filter(type => !uploadedTypes.includes(type));
+
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]); // Grab the first selected file
+    setFile(e.target.files[0]);
   };
 
-  
-  const handleSubmit = async (e) => {
+  const handleUpload = async (e) => {
     e.preventDefault();
     if (!file) {
-      setErrorMessage("Please select a file to upload.");
+      alert('Please select a file to upload.');
       return;
     }
 
-    setUploading(true);
-    setErrorMessage('');
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
 
-    // Create a FormData object to send binary files alongside text data
+    setLoading(true);
+    setMessage('');
+
     const formData = new FormData();
-    formData.append('title', title);
-    formData.append('document', file); // 'document' matches the backend upload field name
+    formData.append('file', file);
+    formData.append('docType', docType);
 
     try {
-      const response = await API.post('/documents/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data', // Tells Axios/Backend to expect a file
-        },
+      await API.post('/documents/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      alert("Upload successful!");
-      setTitle('');
+      setMessage(`${docType} uploaded successfully!`);
+      setUploadedTypes([...uploadedTypes, docType]);
       setFile(null);
-      
-      // If the parent dashboard passed a callback function, call it to refresh the list!
-      if (onUploadSuccess) {
-        onUploadSuccess(response.data);
+
+      // Clear the file input visually in the browser DOM
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
 
-    } catch (error) {
-      setErrorMessage("Upload failed: " + (error.response?.data?.message || error.message));
+      timeoutRef.current = setTimeout(() => {
+        setMessage('');
+      }, 5000);
+
+      const remaining = availableOptions.filter(t => t !== docType);
+      if (remaining.length > 0) {
+        setDocType(remaining[0]);
+      }
+
+      if (onUploadSuccess) onUploadSuccess();
+
+    } catch (err) {
+      setMessage(err.response?.data?.message || 'Upload failed.');
     } finally {
-      setUploading(false);
+      setLoading(false);
     }
   };
 
+  const isComplete = uploadedTypes.length === 3;
+
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label>Document Title: </label>
-        <input 
-          type="text" 
-          placeholder="e.g., ID Proof" 
-          value={title} 
-          onChange={(e) => setTitle(e.target.value)} 
-          required
-        />
+    <div style={{ maxWidth: '450px', margin: '20px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '5px' }}>
+      <h3>Upload Verification Documents</h3>
+
+      {isComplete ? (
+        <div style={{ padding: '15px', backgroundColor: '#e6ffed', color: '#27ae60', textAlign: 'center', borderRadius: '4px' }}>
+          <strong>All documents uploaded successfully!</strong> Submitted for verification.
+        </div>
+      ) : (
+        <form onSubmit={handleUpload}>
+          <div style={{ marginBottom: '15px' }}>
+            <label>Select Document Type:</label><br />
+            <select 
+              value={docType} 
+              onChange={(e) => setDocType(e.target.value)} 
+              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+            >
+              {availableOptions.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ marginBottom: '15px' }}>
+            <label>Select File:</label><br />
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              required 
+              style={{ width: '100%', marginTop: '5px' }}
+            />
+          </div>
+
+          {message && <p style={{ color: message.includes('successfully') ? 'green' : 'red' }}>{message}</p>}
+
+          <button 
+            type="submit" 
+            disabled={loading} 
+            style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
+          >
+            {loading ? 'Uploading...' : `Upload ${docType}`}
+          </button>
+        </form>
+      )}
+
+      <div style={{ marginTop: '15px', fontSize: '14px', color: '#666' }}>
+        <strong>Uploaded:</strong> {uploadedTypes.length > 0 ? uploadedTypes.join(', ') : 'None yet'} (3 required)
       </div>
-
-      <div style={{ marginTop: '10px' }}>
-        <label>Select File: </label>
-        <input 
-          type="file" 
-          onChange={handleFileChange} 
-          accept=".pdf,.jpg,.png"
-          required
-        />
-      </div>
-
-      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
-
-      <button type="submit" disabled={uploading} style={{ marginTop: '10px' }}>
-        {uploading ? 'Uploading...' : 'Submit Document'}
-      </button>
-    </form>
+    </div>
   );
 };
 

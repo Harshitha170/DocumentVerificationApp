@@ -1,12 +1,13 @@
-import { Router} from "express";
-import { getPendingDocuments,
-        updateDocumentStatus
- } from "../controllers/document.controller.js";
-import { verifyJWT, verifyAdmin } from "../middlewares/auth.middleware.js";
+import express from 'express';
+import { getPendingDocuments, updateDocumentStatus } from '../controllers/admin.controller.js';
+import { verifyJWT, verifyAdmin } from '../middlewares/auth.middleware.js'; // Adjust based on your middleware names
 
+const router = express.Router();
 
-const router = Router();
+// Apply JWT and Admin verification guards to all admin routes
+router.use(verifyJWT, verifyAdmin);
 
-router.get('/pendingDocuments',verifyJWT, verifyAdmin, getPendingDocuments);
-router.patch('/document/:documentId/status', verifyJWT, verifyAdmin, updateDocumentStatus )
+router.get('/documents', getPendingDocuments);
+router.patch('/documents/:documentId', updateDocumentStatus);
+
 export default router;

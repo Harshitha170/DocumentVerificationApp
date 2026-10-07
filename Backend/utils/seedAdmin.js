@@ -20,8 +20,8 @@ const seedAdmin = async () => {
             const adminUserName = "SuperAdmin";
               
             //hashing the password
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(adminPassword, salt);
+            const salt =  bcrypt.genSalt(10);
+            const hashedPassword = bcrypt.hash(adminPassword, salt);
 
             //create and saving admin
              await User.create({

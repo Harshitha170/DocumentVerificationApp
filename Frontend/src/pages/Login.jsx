@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 
-const Login = ({ onLoginSuccess }) => {
-  const [credentials, setCredentials] = useState({ email: '', password: '' });
+const Login = () => {
+  const [credentials, setCredentials] = useState({ mobile: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -16,21 +19,21 @@ const Login = ({ onLoginSuccess }) => {
     setError('');
 
     try {
-      // 1. Send credentials to backend login endpoint
       const response = await API.post('/auth/login', credentials);
       
-      // Assuming backend returns: { token: 'jwt_string', role: 'admin' or 'user', user: {...} }
-      const { token, role } = response.data;
+      // FIX: Extract token and role from the correct nested path
+      const token = response.data.token;
+      const role = response.data.user?.role;
 
-      // 2. Store token and role in localStorage
+      // Store credentials securely in localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('role', role);
 
-      alert("Login successful!");
-
-      // 3. Trigger redirect or state update based on role
-      if (onLoginSuccess) {
-        onLoginSuccess(role);
+      // Redirect based on user role
+      if (role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
       }
 
     } catch (err) {
@@ -46,12 +49,13 @@ const Login = ({ onLoginSuccess }) => {
       
       <form onSubmit={handleLogin}>
         <div style={{ marginBottom: '15px' }}>
-          <label>Email: </label><br />
+          <label>Mobile Number: </label><br />
           <input 
-            type="email" 
-            name="email" 
-            value={credentials.email} 
+            type="text" 
+            name="mobile" 
+            value={credentials.mobile} 
             onChange={handleChange} 
+            placeholder="Enter your mobile number"
             required 
             style={{ width: '100%', padding: '8px' }}
           />

@@ -26,7 +26,7 @@ const UserDashboard = () => {
   // Automatically refresh the list when a new document is successfully uploaded
   const handleUploadSuccess = (newDoc) => {
     setDocuments((prevDocs) => [newDoc, ...prevDocs]); // Adds the new doc to the top of the list
-    // Alternatively, you can just call fetchUserDocuments(); to re-fetch from the server
+    
   };
 
   if (loading) return <p>Loading dashboard...</p>;
@@ -55,16 +55,14 @@ const UserDashboard = () => {
           <p>No documents uploaded yet.</p>
         ) : (
           <ul>
-            {documents.map((doc) => (
-              <li key={doc._id || doc.id} style={{ marginBottom: '10px' }}>
-                <strong>{doc.title || doc.docType}</strong> — Status: 
-                <span style={{ marginLeft: '5px', fontWeight: 'bold', color: doc.status === 'approved' ? 'green' : doc.status === 'rejected' ? 'red' : 'orange' }}>
-                  {doc.status}
-                </span>
-                <br />
-                <small>Submitted on: {new Date(doc.createdAt).toLocaleDateString()}</small>
-              </li>
-            ))}
+             {Array.isArray(documents) && documents
+  .filter(doc => doc && typeof doc === 'object') //  Filters out undefined, null, or non-object items
+  .map((doc) => (
+    <div key={doc._id}>
+      <h4>{doc.docType}</h4>
+      <p>Status: {doc.status}</p>
+    </div>
+  ))}
           </ul>
         )}
       </div>

@@ -3,87 +3,105 @@ import API from '../services/api.js';
 import LogoutButton from '../components/LogoutButton.jsx';
 
 const AdminDashboard = () => {
-  const [documents, setDocuments] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(null); // Track which doc is being updated
+  const [error, setError] = useState('');
 
-  // Fetch pending documents for admin review
-  const fetchPendingDocs = async () => {
+  const fetchAdminData = async () => {
     try {
-      const response = await API.get('/admin/pending-documents');
-      setDocuments(response.data);
-    } catch (error) {
-      console.error("Failed to fetch pending documents:", error.response?.data?.message || error.message);
+      const response = await API.get('/admin/documents');
+      setUsers(Array.isArray(response.data) ? response.data : []);
+    } catch (err) {
+      console.error("Failed to fetch admin data:", err);
+      setError(err.response?.data?.message || 'Failed to load admin dashboard queue.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPendingDocs();
+    fetchAdminData();
   }, []);
 
-  // Handle Approve / Reject Actions
-  const handleUpdateStatus = async (documentId, status) => {
-    setActionLoading(documentId);
+  const handleStatusUpdate = async (documentId, status, rejectedReason = '') => {
     try {
-      // Assuming your backend endpoint looks like this: /admin/documents/:id/status
-      await API.put(`/admin/documents/${documentId}/status`, { status });
-      
-      // Refresh the list after successful update
-      setDocuments(documents.filter(doc => doc._id !== documentId && doc.id !== documentId));
-    } catch (error) {
-      alert("Failed to update document status: " + (error.response?.data?.message || error.message));
-    } finally {
-      setActionLoading(null);
+      await API.patch(`/admin/documents/${documentId}`, { status, rejectedReason });
+      alert(`Document marked as ${status}! Email notification sent.`);
+      fetchAdminData(); // Refresh list
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update document status.');
     }
   };
 
-  if (loading) return <p>Loading Admin Dashboard...</p>;
+  if (loading) return <div style={{ padding: '20px', textAlign: 'center' }}>Loading Admin Dashboard...</div>;
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ maxWidth: '1000px', margin: '20px auto', padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       {/* Top Header Section with Logout */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2>Admin Dashboard - Pending Reviews</h2>
+        <h2>Admin Dashboard - Document Verification Queue</h2>
         <LogoutButton />
       </div>
 
-      <hr />
+      {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* Documents List Section */}
-      {documents.length === 0 ? (
-        <p>No pending documents to review.</p>
+      {users.length === 0 ? (
+        <p style={{ textAlign: 'center', color: '#666' }}>No users or documents found to review.</p>
       ) : (
-        documents.map(doc => {
-          const docId = doc._id || doc.id;
-          return (
-            <div key={docId} style={{ marginBottom: '15px', padding: '15px', border: '1px solid #ccc', borderRadius: '5px' }}>
-              <p><strong>Document Type:</strong> {doc.docType || doc.title}</p>
-              <p><strong>Submitted By:</strong> {doc.userId?.email || 'Unknown User'}</p>
-              <p><strong>Status:</strong> {doc.status}</p>
-              
-              {/* Action Buttons */}
-              <div style={{ marginTop: '10px' }}>
-                <button 
-                  onClick={() => handleUpdateStatus(docId, 'approved')}
-                  disabled={actionLoading === docId}
-                  style={{ marginRight: '10px', backgroundColor: 'green', color: 'white', padding: '5px 10px', border: 'none', cursor: 'pointer' }}
-                >
-                  {actionLoading === docId ? 'Processing...' : 'Approve'}
-                </button>
-
-                <button 
-                  onClick={() => handleUpdateStatus(docId, 'rejected')}
-                  disabled={actionLoading === docId}
-                  style={{ backgroundColor: 'red', color: 'white', padding: '5px 10px', border: 'none', cursor: 'pointer' }}
-                >
-                  {actionLoading === docId ? 'Processing...' : 'Reject'}
-                </button>
-              </div>
-            </div>
-          );
-        })
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6', textAlign: 'left' }}>
+              <th style={{ padding: '12px', border: '1px solid #dee2e6' }}>User Unique ID</th>
+              <th style={{ padding: '12px', border: '1px solid #dee2e6' }}>Email</th>
+              <th style={{ padding: '12px', border: '1px solid #dee2e6' }}>Mobile</th>
+              <th style={{ padding: '12px', border: '1px solid #dee2e6' }}>Documents & Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr key={user._id} style={{ borderBottom: '1px solid #dee2e6' }}>
+                <td style={{ padding: '12px', border: '1px solid #dee2e6', fontSize: '13px', wordBreak: 'break-all' }}>
+                  {user._id}
+                </td>
+                <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>{user.email}</td>
+                <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>{user.mobile}</td>
+                <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
+                  {user.documents && user.documents.length > 0 ? (
+                    user.documents.map((doc) => (
+                      <div key={doc._id} style={{ marginBottom: '10px', padding: '8px', background: '#fdfdfd', border: '1px solid #eee', borderRadius: '4px' }}>
+                        <strong>{doc.docType}</strong> — Status: <span style={{ color: doc.status === 'Approved' ? 'green' : doc.status === 'Rejected' ? 'red' : 'orange' }}>{doc.status}</span>
+                        <div style={{ marginTop: '5px' }}>
+                          <a href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ marginRight: '10px', fontSize: '14px' }}>View File</a>
+                          {doc.status === 'Pending' && (
+                            <>
+                              <button 
+                                onClick={() => handleStatusUpdate(doc._id, 'Approved')}
+                                style={{ marginRight: '5px', padding: '3px 8px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                              >
+                                Approve
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  const reason = prompt("Enter rejection reason:");
+                                  if (reason) handleStatusUpdate(doc._id, 'Rejected', reason);
+                                }}
+                                style={{ padding: '3px 8px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <span style={{ color: '#888', fontStyle: 'italic' }}>No documents uploaded yet</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

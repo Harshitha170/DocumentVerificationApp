@@ -8,8 +8,6 @@ const LogoutButton = () => {
     // 1. Clear the token and role from localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('role');
-    
-    // Alternatively, you can clear everything: localStorage.clear();
 
     // 2. Redirect the user to the login page and replace history so they can't go back
     navigate('/login', { replace: true });

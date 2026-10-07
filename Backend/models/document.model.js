@@ -22,7 +22,7 @@ const documentSchema = new Schema({
    },
    status: {
     type: String,
-    enum: ['Pending', 'Verified', 'Rejected'],
+    enum: ['Pending', 'Approved', 'Rejected'],
     required: true,
     default: 'Pending'
    },
