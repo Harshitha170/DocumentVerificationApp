@@ -61,7 +61,7 @@ const AdminDashboard = () => {
             {users.map((user) => (
               <tr key={user._id} style={{ borderBottom: '1px solid #dee2e6' }}>
                 <td style={{ padding: '12px', border: '1px solid #dee2e6', fontSize: '13px', wordBreak: 'break-all' }}>
-                  {user._id}
+                  {user.customId || user._id}
                 </td>
                 <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>{user.email}</td>
                 <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>{user.mobile}</td>

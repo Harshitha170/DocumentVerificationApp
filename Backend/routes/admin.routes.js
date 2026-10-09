@@ -1,6 +1,6 @@
 import express from 'express';
 import { getPendingDocuments, updateDocumentStatus } from '../controllers/admin.controller.js';
-import { verifyJWT, verifyAdmin } from '../middlewares/auth.middleware.js'; // Adjust based on your middleware names
+import { verifyJWT, verifyAdmin } from '../middlewares/auth.middleware.js'; 
 
 const router = express.Router();
 

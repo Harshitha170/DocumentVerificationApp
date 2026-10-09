@@ -6,7 +6,7 @@ const getPendingDocuments = async(req, res) => {
      const pendingDocuments =  await Document.find({
             status: "Pending"
         })
-        .populate("userId", "mobile");
+        .populate("userId", "customId userName email mobile");
 
         return res
         .status(200)

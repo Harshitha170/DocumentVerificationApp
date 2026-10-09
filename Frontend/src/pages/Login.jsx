@@ -13,7 +13,7 @@ const Login = () => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
 
-  const handleLogin = async (e) => {
+ const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -21,15 +21,24 @@ const Login = () => {
     try {
       const response = await API.post('/auth/login', credentials);
       
-      // FIX: Extract token and role from the correct nested path
+      // 1. Extract fields correctly from response data
       const token = response.data.token;
       const role = response.data.user?.role;
+      const userName = response.data.user?.userName || response.data.user?.name; 
+      const customId = response.data.customId || response.data.user?.customId;
 
-      // Store credentials securely in localStorage
+      // 2. Store them securely in localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('role', role);
+      
+      if (userName) {
+        localStorage.setItem('userName', userName);
+      }
+      if (customId) {
+        localStorage.setItem('customId', customId);
+      }
 
-      // Redirect based on user role
+      // 3. Redirect based on user role
       if (role === 'admin') {
         navigate('/admin', { replace: true });
       } else {
@@ -42,7 +51,6 @@ const Login = () => {
       setLoading(false);
     }
   };
-
   return (
     <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc' }}>
       <h2>Login to Document Verification</h2>

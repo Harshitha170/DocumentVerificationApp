@@ -3,15 +3,14 @@ import { Document } from '../models/document.model.js';
 import { sendVerificationEmail } from '../utils/sendEmail.js';
 
 // Get all users and their documents for the admin queue
-
 export const getPendingDocuments = async (req, res) => {
     try {
-        // Fetch only non-admin users (role: 'user')
+        // Fetch only non-admin users (role: 'user') and select customId explicitly
         const users = await User.find({ role: { $ne: 'admin' } }).select('-password').lean();
         
         const allDocuments = await Document.find({}).lean();
 
-        // Map documents to their respective users
+        // Map documents to their respective users and include customId
         let usersWithDocs = users.map(user => {
             const userDocs = allDocuments.filter(doc => {
                 const docUserRef = doc.userId || doc.user;
@@ -20,14 +19,15 @@ export const getPendingDocuments = async (req, res) => {
 
             return {
                 _id: user._id,
-                username: user.username || user.name || 'User',
+                customId: user.customId || 'N/A', 
+                username: user.userName || user.name || 'User',
                 email: user.email || 'No Email',
                 mobile: user.mobile || user.phone || 'N/A',
                 documents: userDocs
             };
         });
 
-        // Optional: Filter out users who have NO documents uploaded yet so the queue stays tidy
+        // Filter out users who have NO documents uploaded yet so the queue stays tidy
         usersWithDocs = usersWithDocs.filter(user => user.documents.length > 0);
 
         return res.status(200).json(usersWithDocs);
@@ -63,8 +63,8 @@ export const updateDocumentStatus = async (req, res) => {
             if (user && user.email) {
                 const subject = `Document Update: Your ${document.docType || 'Document'} was ${status}`;
                 const message = status === 'Approved' 
-                    ? `Hello ${user.username || 'User'},\n\nGreat news! Your document (${document.docType || 'ID'}) has been verified and approved.`
-                    : `Hello ${user.username || 'User'},\n\nUnfortunately, your document (${document.docType || 'ID'}) was rejected. Reason: ${rejectedReason || 'Not specified'}. Please re-upload.`;
+                    ? `Hello ${user.userName || 'User'},\n\nGreat news! Your document (${document.docType || 'ID'}) has been verified and approved.`
+                    : `Hello ${user.userName || 'User'},\n\nUnfortunately, your document (${document.docType || 'ID'}) was rejected. Reason: ${rejectedReason || 'Not specified'}. Please re-upload.`;
                 
                 await sendVerificationEmail(user.email, subject, message);
             }

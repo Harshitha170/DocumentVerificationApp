@@ -7,7 +7,7 @@ import fs from 'fs';
 
 const registerUser = async (req, res) => {
     try {
-        const { username, email, mobile,age , gender, password, role} = req.body;
+        const { userName, email, mobile,age , gender, password, role} = req.body;
 
         const existingUser = await User.findOne({ $or: [{ mobile }, { email }] });
         if (existingUser) {
@@ -18,7 +18,7 @@ const registerUser = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         const newUser = await User.create({ 
-            username,
+            userName,
             email,
             mobile,
             age,
@@ -65,8 +65,11 @@ const loginUser = async (req, res) => {
         return res.status(200).json({
             message: "Login Successful",
             token,
+            customId: user.customId, // <-- Sent explicitly for frontend storage
             user: {
                 id: user._id,
+                userName: user.userName,
+                customId: user.customId,
                 mobile: user.mobile,
                 role: user.role
             }
