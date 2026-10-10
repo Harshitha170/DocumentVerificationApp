@@ -3,19 +3,19 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 const ProtectedRoute = ({ allowedRole }) => {
   const token = localStorage.getItem('token');
-  const userRole = localStorage.getItem('role');
+  const role = localStorage.getItem('role');
 
-  // 1. If there is no token, redirect to the login page
+  // If no token exists in localStorage, force redirect to login
   if (!token) {
     return <Navigate to="/login" replace />;
   }
 
-  // 2. If a specific role is required and doesn't match, block access
-  if (allowedRole && userRole !== allowedRole) {
+  // If a specific role is required, check case-insensitively (e.g. 'Admin' vs 'admin')
+  if (allowedRole && role?.toLowerCase() !== allowedRole?.toLowerCase()) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // 3. If checks pass, render the requested child route
+  // If valid, render the nested component layout
   return <Outlet />;
 };
 

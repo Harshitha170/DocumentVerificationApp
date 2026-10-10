@@ -6,11 +6,14 @@ import AdminDashboard from './pages/AdminDashboard.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Unauthorized from './pages/Unauthorized.jsx';
 import Register from './pages/Register.jsx';
+import Landing from './pages/LandingPage.jsx';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+
+        <Route path="/" element={<Landing />} />
         {/*Register*/}
         <Route path="/register" element={<Register/>}  />
 

@@ -1,20 +1,33 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import API from '../services/api.js';
+import { 
+  Box, 
+  Card, 
+  CardContent, 
+  TextField, 
+  Button, 
+  Typography, 
+  Alert, 
+  FormControl, 
+  InputLabel, 
+  Select, 
+  MenuItem 
+} from '@mui/material';
+import API from '../services/api';
+import '../App.css';
 
 const Register = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
+    userName: '',
     mobile: '',
-    age: '',
-    gender: 'Male',
-    password: ''
+    email: '',
+    password: '',
+    gender: 'Male'
   });
-  
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -23,126 +36,152 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage('');
+    setError('');
 
     try {
-      // Calls your backend: POST /api/auth/register
-      const response = await API.post('/auth/register', formData);
-      setMessage(response.data.message || 'Registration successful! Redirecting to login...');
-      
-      // Successfully registered — redirect to login page after 1.5 seconds
-      setTimeout(() => {
-        navigate('/login');
-      }, 1500);
-
+      await API.post('/auth/register', formData);
+      navigate('/login', { replace: true });
     } catch (err) {
-      console.error("Registration error:", err);
-      setMessage(err.response?.data?.message || 'Registration failed. Please check your details.');
+      setError(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '30px auto', padding: '25px', border: '1px solid #ccc', borderRadius: '8px', fontFamily: 'Arial, sans-serif', background: '#fff' }}>
-      <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>Register for Document Verification</h3>
-      
-      <form onSubmit={handleRegister}>
-        <div style={{ marginBottom: '12px' }}>
-          <label>Full Name / Username:</label><br />
-          <input 
-            type="text" 
-            name="username" 
-            value={formData.username} 
-            onChange={handleChange} 
-            required 
-            style={{ width: '100%', padding: '8px', marginTop: '4px', boxSizing: 'border-box' }}
-          />
-        </div>
+    <Box 
+      className="center-container"
+      sx={{ 
+        backgroundImage: `url('https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=1920&auto=format&fit=crop')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        position: 'relative',
+        py: 4
+      }}
+    >
+      <Box className="overlay" sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.5)' }} />
 
-        <div style={{ marginBottom: '12px' }}>
-          <label>Email (Required):</label><br />
-          <input 
-            type="email" 
-            name="email" 
-            value={formData.email} 
-            onChange={handleChange} 
-            required 
-            style={{ width: '100%', padding: '8px', marginTop: '4px', boxSizing: 'border-box' }}
-          />
-        </div>
+      <Card 
+        elevation={6}
+        sx={{ 
+          position: 'relative', 
+          zIndex: 1, 
+          maxWidth: 440, 
+          width: '100%', 
+          p: 4, 
+          borderRadius: 3,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+        }}
+      >
+        <CardContent sx={{ p: 0 }}>
+          <Typography variant="h5" fontWeight="bold" align="center" gutterBottom>
+            Create Account
+          </Typography>
+          <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
+            Register for the Document Verification Portal
+          </Typography>
+          
+          <Box component="form" onSubmit={handleRegister} autoComplete="off" noValidate>
+            <TextField
+              fullWidth
+              label="Full Name"
+              name="userName"
+              variant="outlined"
+              size="small"
+              value={formData.userName}
+              onChange={handleChange}
+              required
+              sx={{ mb: 2 }}
+              inputProps={{ autoComplete: 'off' }}
+            />
 
-        <div style={{ marginBottom: '12px' }}>
-          <label>Mobile Number:</label><br />
-          <input 
-            type="text" 
-            name="mobile" 
-            value={formData.mobile} 
-            onChange={handleChange} 
-            required 
-            style={{ width: '100%', padding: '8px', marginTop: '4px', boxSizing: 'border-box' }}
-          />
-        </div>
+            <TextField
+              fullWidth
+              label="Mobile Number"
+              name="mobile"
+              variant="outlined"
+              size="small"
+              value={formData.mobile}
+              onChange={handleChange}
+              required
+              sx={{ mb: 2 }}
+              inputProps={{ autoComplete: 'off' }}
+            />
 
-        <div style={{ marginBottom: '12px' }}>
-          <label>Age:</label><br />
-          <input 
-            type="number" 
-            name="age" 
-            value={formData.age} 
-            onChange={handleChange} 
-            style={{ width: '100%', padding: '8px', marginTop: '4px', boxSizing: 'border-box' }}
-          />
-        </div>
+            <TextField
+              fullWidth
+              label="Email Address"
+              name="email"
+              type="email"
+              variant="outlined"
+              size="small"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              sx={{ mb: 2 }}
+              inputProps={{ autoComplete: 'off' }}
+            />
 
-        <div style={{ marginBottom: '12px' }}>
-          <label>Gender:</label><br />
-          <select 
-            name="gender" 
-            value={formData.gender} 
-            onChange={handleChange} 
-            style={{ width: '100%', padding: '8px', marginTop: '4px', boxSizing: 'border-box' }}
-          >
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type="password"
+              variant="outlined"
+              size="small"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              sx={{ mb: 2 }}
+              inputProps={{ autoComplete: 'new-password' }}
+            />
 
-        <div style={{ marginBottom: '15px' }}>
-          <label>Password:</label><br />
-          <input 
-            type="password" 
-            name="password" 
-            value={formData.password} 
-            onChange={handleChange} 
-            required 
-            style={{ width: '100%', padding: '8px', marginTop: '4px', boxSizing: 'border-box' }}
-          />
-        </div>
+            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+              <InputLabel id="gender-label">Gender</InputLabel>
+              <Select
+                labelId="gender-label"
+                name="gender"
+                value={formData.gender}
+                label="Gender"
+                onChange={handleChange}
+              >
+                <MenuItem value="Male">Male</MenuItem>
+                <MenuItem value="Female">Female</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </Select>
+            </FormControl>
 
-        {message && (
-          <p style={{ color: message.includes('successful') ? 'green' : 'red', fontSize: '14px', textAlign: 'center', marginBottom: '15px' }}>
-            {message}
-          </p>
-        )}
+            {error && (
+              <Alert severity="error" sx={{ mb: 2, fontSize: '13px' }}>
+                {error}
+              </Alert>
+            )}
 
-        <button 
-          type="submit" 
-          disabled={loading} 
-          style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          {loading ? 'Registering...' : 'Register'}
-        </button>
-      </form>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={loading}
+              sx={{ mt: 1, mb: 2, py: 1.2, fontWeight: 'bold', textTransform: 'none' }}
+            >
+              {loading ? 'Registering...' : 'Register'}
+            </Button>
+          </Box>
 
-      <p style={{ marginTop: '20px', textAlign: 'center', fontSize: '14px' }}>
-        Already have an account?{' '}
-        <Link to="/login" style={{ color: '#007bff', textDecoration: 'underline' }}>
-          Login here
-        </Link>
-      </p>
-    </div>
+          <Typography variant="body2" align="center" color="text.secondary">
+            Already have an account?{' '}
+            <Link to="/login" style={{ color: '#1976d2', textDecoration: 'none', fontWeight: 'bold' }}>
+              Login here
+            </Link>
+          </Typography>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 

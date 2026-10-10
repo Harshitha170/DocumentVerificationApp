@@ -9,7 +9,12 @@ export const getCurrentUser = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
-        res.status(200).json(user);
+        res.status(200).json({
+    customId: user.customId,
+    userName: user.userName || user.email.split('@')[0], // Falls back cleanly if userName is blank
+    role: user.role,
+    mobile: user.mobile
+})
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
