@@ -5,6 +5,7 @@ import authRouter from './routes/auth.routes.js';
 import adminRouter from './routes/admin.routes.js';
 import documentRouter from './routes/document.routes.js';
 import userRouter from './routes/user.routes.js';
+import assetRoutes from './routes/asset.routes.js'
 
 const app = express();
 
@@ -15,4 +16,6 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/documents', documentRouter); // frontend API calls
 app.use('/api/users', userRouter);
+app.use('/api/assets', assetRoutes);
+
 export { app };
