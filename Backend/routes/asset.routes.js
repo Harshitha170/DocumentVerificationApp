@@ -1,5 +1,6 @@
 import express from 'express';
 import Asset from '../models/asset.model.js';
+import upload from '../middlewares/upload.middleware.js';
 
 const router = express.Router();
 
@@ -13,13 +14,12 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST new asset (Admin upload)
-router.post('/', async (req, res) => {
+// POST new asset (Admin upload) - 2. Add upload.single('file') middleware here!
+router.post('/', upload.single('file'), async (req, res) => {
   try {
     const { assetId, title } = req.body;
     
-    // If you are handling files via multer, req.file will contain the upload details
-    // For now, mapping the uploaded file URL or path:
+    // Now req.file and req.body are correctly parsed by multer
     const fileUrl = req.file ? `/uploads/${req.file.filename}` : req.body.fileUrl;
 
     const newAsset = new Asset({

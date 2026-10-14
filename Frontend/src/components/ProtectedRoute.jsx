@@ -5,17 +5,22 @@ const ProtectedRoute = ({ allowedRole }) => {
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
 
-  // If no token exists in localStorage, force redirect to login
+  // 1. If no token exists, send to login
   if (!token) {
     return <Navigate to="/login" replace />;
   }
 
-  // If a specific role is required, check case-insensitively (e.g. 'Admin' vs 'admin')
-  if (allowedRole && role?.toLowerCase() !== allowedRole?.toLowerCase()) {
-    return <Navigate to="/unauthorized" replace />;
+  // 2. Safe, case-insensitive role check
+  if (allowedRole) {
+    const userRole = role?.toLowerCase().trim();
+    const targetRole = allowedRole?.toLowerCase().trim();
+
+    if (userRole !== targetRole) {
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
-  // If valid, render the nested component layout
+  // 3. Render nested protected components
   return <Outlet />;
 };
 

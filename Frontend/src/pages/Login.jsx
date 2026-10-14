@@ -102,7 +102,7 @@ const Login = () => {
               onChange={handleChange}
               required
               sx={{ mb: 2 }}
-              inputProps={{ autoComplete: 'off' }}
+              slotProps={{ htmlInput: {autoComplete: 'off'} }}
             />
 
             <TextField
@@ -116,7 +116,7 @@ const Login = () => {
               onChange={handleChange}
               required
               sx={{ mb: 2 }}
-              inputProps={{ autoComplete: 'new-password' }}
+              slotProps={{  htmlInput: {autoComplete: 'new-password'} }}
             />
 
             {error && (

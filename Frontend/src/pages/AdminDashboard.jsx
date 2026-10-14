@@ -1,18 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  Box, 
+  Drawer, 
+  Toolbar, 
+  Typography, 
+  IconButton, 
+  List, 
+  ListItemButton, 
+  ListItemIcon, 
+  ListItemText, 
+  Paper, 
+  Divider,
+  Menu,
+  MenuItem,
+  Avatar,
+  Button,
+  TextField,
+  Alert
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import FolderSharedIcon from '@mui/icons-material/FolderShared';
+import DescriptionIcon from '@mui/icons-material/Description';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import SettingsIcon from '@mui/icons-material/Settings';
+import LogoutIcon from '@mui/icons-material/Logout';
 import API from '../services/api.js';
-import LogoutButton from '../components/LogoutButton.jsx';
-import '../App.css';
+
+const drawerWidth = 260;
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
-  // Instant protection check on component mount/refresh
   useEffect(() => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
 
-    if (!token || role !== 'admin') {
+    if (!token || role?.toLowerCase() !== 'admin') {
       navigate('/login', { replace: true });
     }
   }, [navigate]);
@@ -20,18 +44,23 @@ const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('all-docs');
 
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openMenu = Boolean(anchorEl);
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Asset Management Form State
   const [assetData, setAssetData] = useState({ assetId: '', title: '' });
   const [assetFile, setAssetFile] = useState(null);
   const [assetLoading, setAssetLoading] = useState(false);
   const [assetMessage, setAssetMessage] = useState('');
   const [assets, setAssets] = useState([]);
 
-  const adminName = localStorage.getItem('userName') || 'Admin';
+  const [adminName, setAdminName] = useState(localStorage.getItem('userName') || 'Admin');
+  const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '' });
+  const [settingsMessage, setSettingsMessage] = useState({ text: '', type: '' });
+  const [settingsLoading, setSettingsLoading] = useState(false);
 
   const fetchAdminData = async () => {
     try {
@@ -59,6 +88,14 @@ const AdminDashboard = () => {
     fetchAssets();
   }, []);
 
+  const handleProfileClick = (event) => setAnchorEl(event.currentTarget);
+  const handleProfileClose = () => setAnchorEl(null);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/login', { replace: true });
+  };
+
   const handleStatusUpdate = async (documentId, status, rejectedReason = '') => {
     try {
       await API.patch(`/admin/documents/${documentId}`, { status, rejectedReason });
@@ -74,12 +111,16 @@ const AdminDashboard = () => {
     setAssetLoading(true);
     setAssetMessage('');
 
-    const formData = new FormData();
-    formData.append('assetId', assetData.assetId);
-    formData.append('title', assetData.title);
-    if (assetFile) {
-      formData.append('file', assetFile);
+    if (!assetFile) {
+      setAssetMessage('Please select a file to upload.');
+      setAssetLoading(false);
+      return;
     }
+
+    const formData = new FormData();
+    formData.append('assetId', assetData.assetId.trim());
+    formData.append('title', assetData.title.trim());
+    formData.append('file', assetFile);
 
     try {
       await API.post('/assets', formData, {
@@ -96,7 +137,28 @@ const AdminDashboard = () => {
     }
   };
 
-  if (loading) return <div style={{ padding: '20px', textAlign: 'center' }}>Loading Admin Dashboard...</div>;
+  const handleSettingsUpdate = async (e) => {
+    e.preventDefault();
+    setSettingsLoading(true);
+    setSettingsMessage({ text: '', type: '' });
+
+    try {
+      await API.put('/auth/profile', {
+        name: adminName,
+        currentPassword: passwords.currentPassword || undefined,
+        newPassword: passwords.newPassword || undefined
+      });
+      localStorage.setItem('userName', adminName);
+      setSettingsMessage({ text: 'Admin settings updated successfully!', type: 'success' });
+      setPasswords({ currentPassword: '', newPassword: '' });
+    } catch (err) {
+      setSettingsMessage({ text: err.response?.data?.message || 'Failed to update settings.', type: 'error' });
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  if (loading) return <Box sx={{ p: 4, textAlign: 'center' }}><Typography>Loading Admin Dashboard...</Typography></Box>;
 
   const filteredUsers = users.map(user => {
     if (activeTab === 'pending-docs') {
@@ -107,176 +169,324 @@ const AdminDashboard = () => {
   }).filter(user => activeTab !== 'pending-docs' || (user.documents && user.documents.length > 0));
 
   return (
-    <div className="app-layout">
-      {/* Sidebar with Hamburger */}
-      <div className={`sidebar ${sidebarOpen ? '' : 'closed'}`}>
-        <div className="sidebar-header">
-          {sidebarOpen && <span>Admin Portal</span>}
-          <button className="hamburger-btn" style={{ color: '#fff' }} onClick={() => setSidebarOpen(!sidebarOpen)}>
-            ☰
-          </button>
-        </div>
-        <ul className="sidebar-menu">
-          <li>
-            <a href="#all-docs" onClick={() => setActiveTab('all-docs')} className={`sidebar-item ${activeTab === 'all-docs' ? 'active' : ''}`}>
-              📁 {sidebarOpen && 'All Documents'}
-            </a>
-          </li>
-          <li>
-            <a href="#pending-docs" onClick={() => setActiveTab('pending-docs')} className={`sidebar-item ${activeTab === 'pending-docs' ? 'active' : ''}`}>
-              ⏳ {sidebarOpen && 'Pending Docs'}
-            </a>
-          </li>
-          <li>
-            <a href="#assets" onClick={() => setActiveTab('assets')} className={`sidebar-item ${activeTab === 'assets' ? 'active' : ''}`}>
-              📦 {sidebarOpen && 'Assets Management'}
-            </a>
-          </li>
-        </ul>
-      </div>
+    <Box sx={{ display: 'flex', bgcolor: '#f8fafc', minHeight: '100vh' }}>
+      <Drawer
+        variant="permanent"
+        sx={{
+          width: sidebarOpen ? drawerWidth : 70,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': { 
+            width: sidebarOpen ? drawerWidth : 70, 
+            boxSizing: 'border-box', 
+            bgcolor: '#1e293b', 
+            color: '#fff',
+            transition: 'width 0.3s ease',
+            overflowX: 'hidden',
+            borderRight: 'none'
+          },
+        }}
+        open={sidebarOpen}
+      >
+        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', px: 2, borderBottom: '1px solid #334155' }}>
+          {sidebarOpen && <Typography variant="h6" fontWeight="bold">Admin Portal</Typography>}
+          <IconButton sx={{ color: '#fff' }} onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <MenuIcon />
+          </IconButton>
+        </Toolbar>
 
-      {/* Main Content Area */}
-      <div className="main-content">
-        <div className="topbar">
-        
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <span style={{ fontWeight: '600', color: '#1e293b' }}>👤 {adminName} (Admin)</span>
-            <LogoutButton />
-          </div>
-        </div>
+        <List sx={{ px: 1, mt: 2 }}>
+          <ListItemButton 
+            selected={activeTab === 'all-docs'}
+            onClick={() => setActiveTab('all-docs')}
+            sx={{ borderRadius: 2, mb: 1, '&.Mui-selected': { bgcolor: '#334155' } }}
+          >
+            <ListItemIcon sx={{ color: '#94a3b8', minWidth: 40 }}><DescriptionIcon /></ListItemIcon>
+            {sidebarOpen && <ListItemText primary="All Documents" />}
+          </ListItemButton>
 
-        <div className="content-body">
-          {error && <p style={{ color: 'red' }}>{error}</p>}
+          <ListItemButton 
+            selected={activeTab === 'pending-docs'}
+            onClick={() => setActiveTab('pending-docs')}
+            sx={{ borderRadius: 2, mb: 1, '&.Mui-selected': { bgcolor: '#334155' } }}
+          >
+            <ListItemIcon sx={{ color: '#94a3b8', minWidth: 40 }}><AssignmentIcon /></ListItemIcon>
+            {sidebarOpen && <ListItemText primary="Pending Docs" />}
+          </ListItemButton>
+
+          <ListItemButton 
+            selected={activeTab === 'assets'}
+            onClick={() => setActiveTab('assets')}
+            sx={{ borderRadius: 2, mb: 1, '&.Mui-selected': { bgcolor: '#334155' } }}
+          >
+            <ListItemIcon sx={{ color: '#94a3b8', minWidth: 40 }}><FolderSharedIcon /></ListItemIcon>
+            {sidebarOpen && <ListItemText primary="Assets Management" />}
+          </ListItemButton>
+
+          <ListItemButton 
+            selected={activeTab === 'admin-settings'}
+            onClick={() => setActiveTab('admin-settings')}
+            sx={{ borderRadius: 2, '&.Mui-selected': { bgcolor: '#334155' } }}
+          >
+            <ListItemIcon sx={{ color: '#94a3b8', minWidth: 40 }}><SettingsIcon /></ListItemIcon>
+            {sidebarOpen && <ListItemText primary="Admin Settings" />}
+          </ListItemButton>
+        </List>
+      </Drawer>
+
+      <Box component="main" sx={{ flexGrow: 1, p: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 4 }}>
+          <IconButton onClick={handleProfileClick} sx={{ p: 0 }}>
+            <Avatar sx={{ bgcolor: '#d32f2f', width: 40, height: 40, fontWeight: 'bold' }}>
+              {adminName.charAt(0).toUpperCase()}
+            </Avatar>
+          </IconButton>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={openMenu}
+            onClose={handleProfileClose}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            slotProps={{
+              paper: {
+                sx: { width: 220, mt: 1.5, p: 1, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }
+              }
+            }}
+          >
+            <Box sx={{ px: 2, py: 1.5 }}>
+              <Typography variant="subtitle1" fontWeight="bold">{adminName}</Typography>
+              <Typography variant="caption" color="text.secondary">Role: Administrator</Typography>
+            </Box>
+            <Divider sx={{ my: 1 }} />
+            <MenuItem onClick={() => { setActiveTab('admin-settings'); handleProfileClose(); }} sx={{ gap: 1.5, borderRadius: 1 }}>
+              <SettingsIcon fontSize="small" color="action" /> Admin Settings
+            </MenuItem>
+            <MenuItem onClick={handleLogout} sx={{ gap: 1.5, borderRadius: 1, color: 'error.main' }}>
+              <LogoutIcon fontSize="small" color="error" /> Logout
+            </MenuItem>
+          </Menu>
+        </Box>
+
+        <Box>
+          {error && <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>}
 
           {(activeTab === 'all-docs' || activeTab === 'pending-docs') && (
-            <div>
-              <h2>{activeTab === 'all-docs' ? 'All User Documents Queue' : 'Pending Verification Documents'}</h2>
-              <p style={{ color: '#64748b', marginBottom: '20px' }}>Review user submissions and manage approvals or rejections.</p>
+            <Box>
+              <Typography variant="h4" fontWeight="bold" gutterBottom>
+                {activeTab === 'all-docs' ? 'All User Documents Queue' : 'Pending Verification Documents'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Review user submissions and manage approvals or rejections.
+              </Typography>
 
               {filteredUsers.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#666', padding: '30px' }}>No documents found to review.</p>
+                <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 2, border: '1px solid #e2e8f0' }}>
+                  <Typography variant="body2" color="text.secondary">No documents found to review.</Typography>
+                </Paper>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px', background: '#fff' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6', textAlign: 'left' }}>
-                      <th style={{ padding: '12px', border: '1px solid #dee2e6' }}>User Unique ID</th>
-                      <th style={{ padding: '12px', border: '1px solid #dee2e6' }}>Email</th>
-                      <th style={{ padding: '12px', border: '1px solid #dee2e6' }}>Mobile</th>
-                      <th style={{ padding: '12px', border: '1px solid #dee2e6' }}>Documents & Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.map((user) => (
-                      <tr key={user._id} style={{ borderBottom: '1px solid #dee2e6' }}>
-                        <td style={{ padding: '12px', border: '1px solid #dee2e6', fontSize: '13px', wordBreak: 'break-all' }}>
-                          {user.customId || user._id}
-                        </td>
-                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>{user.email}</td>
-                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>{user.mobile}</td>
-                        <td style={{ padding: '12px', border: '1px solid #dee2e6' }}>
-                          {user.documents && user.documents.length > 0 ? (
-                            user.documents.map((doc) => (
-                              <div key={doc._id} style={{ marginBottom: '10px', padding: '8px', background: '#fdfdfd', border: '1px solid #eee', borderRadius: '4px' }}>
-                                <strong>{doc.docType}</strong> — Status: <span style={{ color: doc.status === 'Approved' ? 'green' : doc.status === 'Rejected' ? 'red' : 'orange' }}>{doc.status}</span>
-                                <div style={{ marginTop: '5px' }}>
-                                  <a href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ marginRight: '10px', fontSize: '14px' }}>View File</a>
-                                  {doc.status === 'Pending' && (
-                                    <>
-                                      <button 
-                                        onClick={() => handleStatusUpdate(doc._id, 'Approved')}
-                                        style={{ marginRight: '5px', padding: '3px 8px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-                                      >
-                                        Approve
-                                      </button>
-                                      <button 
-                                        onClick={() => {
-                                          const reason = prompt("Enter rejection reason:");
-                                          if (reason) handleStatusUpdate(doc._id, 'Rejected', reason);
-                                        }}
-                                        style={{ padding: '3px 8px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-                                      >
-                                        Reject
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <span style={{ color: '#888', fontStyle: 'italic' }}>No documents uploaded</span>
-                          )}
-                        </td>
+                <Paper sx={{ p: 3, borderRadius: 2, border: '1px solid #e2e8f0', overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #e2e8f0' }}>User Unique ID</th>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #e2e8f0' }}>Email</th>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #e2e8f0' }}>Mobile</th>
+                        <th style={{ padding: '12px', borderBottom: '1px solid #e2e8f0' }}>Documents & Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {filteredUsers.map((user) => (
+                        <tr key={user._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '12px', fontSize: '13px', wordBreak: 'break-all' }}>
+                            {user.customId || user._id}
+                          </td>
+                          <td style={{ padding: '12px' }}>{user.email}</td>
+                          <td style={{ padding: '12px' }}>{user.mobile}</td>
+                          <td style={{ padding: '12px' }}>
+                            {user.documents && user.documents.length > 0 ? (
+                              user.documents.map((doc) => (
+                                <Box key={doc._id} sx={{ mb: 1.5, p: 1.5, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 2 }}>
+                                  <Typography variant="body2" fontWeight="bold">{doc.docType}</Typography>
+                                  <Typography variant="caption" color="text.secondary">Status: {doc.status}</Typography>
+                                  <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
+                                    <Button href={doc.fileUrl} target="_blank" rel="noreferrer" size="small" variant="text" sx={{ p: 0, minWidth: 'auto', textTransform: 'none' }}>
+                                      View File →
+                                    </Button>
+                                    {doc.status === 'Pending' && (
+                                      <>
+                                        <Button 
+                                          onClick={() => handleStatusUpdate(doc._id, 'Approved')}
+                                          size="small" 
+                                          variant="contained" 
+                                          color="success"
+                                          sx={{ py: 0.5, px: 1.5, minWidth: 'auto', fontSize: '12px' }}
+                                        >
+                                          Approve
+                                        </Button>
+                                        <Button 
+                                          onClick={() => {
+                                            const reason = prompt("Enter rejection reason:");
+                                            if (reason) handleStatusUpdate(doc._id, 'Rejected', reason);
+                                          }}
+                                          size="small" 
+                                          variant="contained" 
+                                          color="error"
+                                          sx={{ py: 0.5, px: 1.5, minWidth: 'auto', fontSize: '12px' }}
+                                        >
+                                          Reject
+                                        </Button>
+                                      </>
+                                    )}
+                                  </Box>
+                                </Box>
+                              ))
+                            ) : (
+                              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>No documents uploaded</Typography>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </Paper>
               )}
-            </div>
+            </Box>
           )}
 
           {activeTab === 'assets' && (
-            <div>
-              <h2>EV Assets Management</h2>
-              <p style={{ color: '#64748b', marginBottom: '20px' }}>Upload vehicle info guides, specs, or images to display on all user dashboards.</p>
+            <Box>
+              <Typography variant="h4" fontWeight="bold" gutterBottom>
+                EV Assets Management
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Upload vehicle info guides, specs, or images to display on all user dashboards.
+              </Typography>
               
-              <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', border: '1px solid #e2e8f0', maxWidth: '600px', marginBottom: '25px' }}>
-                <h3>Add New Asset</h3>
+              <Paper sx={{ p: 3, mb: 4, borderRadius: 2, border: '1px solid #e2e8f0', maxWidth: 600 }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>Add New Asset</Typography>
                 <form onSubmit={handleAssetSubmit} autoComplete="off">
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '5px' }}>Asset ID</label>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Asset ID</Typography>
                     <input 
                       type="text" 
                       value={assetData.assetId} 
                       onChange={(e) => setAssetData({ ...assetData, assetId: e.target.value })} 
                       placeholder="e.g. EV-SPEC-01" 
                       required 
-                      style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box' }}
                     />
-                  </div>
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '5px' }}>Asset Title / Info</label>
+                  </Box>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Asset Title / Info</Typography>
                     <input 
                       type="text" 
                       value={assetData.title} 
                       onChange={(e) => setAssetData({ ...assetData, title: e.target.value })} 
                       placeholder="e.g. Fleet Vehicle Compliance Guide" 
                       required 
-                      style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box' }}
                     />
-                  </div>
-                  <div style={{ marginBottom: '15px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '5px' }}>Upload File (PDF / Image)</label>
+                  </Box>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Upload File (PDF / Image)</Typography>
                     <input 
                       type="file" 
                       onChange={(e) => setAssetFile(e.target.files[0])} 
                       accept=".pdf,image/*" 
                       required 
                     />
-                  </div>
-                  {assetMessage && <p style={{ color: assetMessage.includes('success') ? 'green' : 'red', fontSize: '13px' }}>{assetMessage}</p>}
-                  <button type="submit" disabled={assetLoading} className="btn-primary" style={{ marginTop: 0 }}>
+                  </Box>
+                  {assetMessage && <Typography color={assetMessage.includes('success') ? 'success.main' : 'error.main'} variant="body2" sx={{ mb: 2 }}>{assetMessage}</Typography>}
+                  <Button type="submit" disabled={assetLoading} variant="contained" sx={{ textTransform: 'none', fontWeight: 'bold' }}>
                     {assetLoading ? 'Uploading Asset...' : 'Upload Asset'}
-                  </button>
+                  </Button>
                 </form>
-              </div>
+              </Paper>
 
-              <h3>Published Assets List</h3>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>Published Assets List</Typography>
               {assets.length === 0 ? (
-                <p style={{ color: '#666' }}>No assets uploaded yet.</p>
+                <Typography variant="body2" color="text.secondary">No assets uploaded yet.</Typography>
               ) : (
-                <ul>
+                <List sx={{ bgcolor: '#fff', borderRadius: 2, border: '1px solid #e2e8f0', p: 2 }}>
                   {assets.map((asset) => (
-                    <li key={asset._id} style={{ marginBottom: '8px' }}>
-                      <strong>{asset.assetId}</strong>: {asset.title} {asset.fileUrl && <a href={asset.fileUrl} target="_blank" rel="noreferrer">[View]</a>}
-                    </li>
+                    <Box key={asset._id} sx={{ py: 1, borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="body2"><strong>{asset.assetId}</strong>: {asset.title}</Typography>
+                      {asset.fileUrl && (
+                        <Button href={asset.fileUrl} target="_blank" rel="noreferrer" size="small" variant="text" sx={{ textTransform: 'none' }}>
+                          [View File]
+                        </Button>
+                      )}
+                    </Box>
                   ))}
-                </ul>
+                </List>
               )}
-            </div>
+            </Box>
           )}
-        </div>
-      </div>
-    </div>
+
+          {activeTab === 'admin-settings' && (
+            <Box>
+              <Typography variant="h4" fontWeight="bold" gutterBottom>
+                Admin Settings
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Manage your administrative account details and credentials.
+              </Typography>
+
+              <Paper sx={{ p: 4, borderRadius: 2, border: '1px solid #e2e8f0', maxWidth: 600 }}>
+                <form onSubmit={handleSettingsUpdate}>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Display Name</Typography>
+                    <TextField 
+                      fullWidth 
+                      size="small"
+                      value={adminName} 
+                      onChange={(e) => setAdminName(e.target.value)} 
+                      required 
+                    />
+                  </Box>
+
+                  <Divider sx={{ my: 3 }} />
+
+                  <Typography variant="h6" fontWeight="bold" gutterBottom>Change Password</Typography>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Current Password</Typography>
+                    <TextField 
+                      fullWidth 
+                      type="password"
+                      size="small"
+                      value={passwords.currentPassword} 
+                      onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} 
+                      placeholder="Enter current password"
+                    />
+                  </Box>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>New Password</Typography>
+                    <TextField 
+                      fullWidth 
+                      type="password"
+                      size="small"
+                      value={passwords.newPassword} 
+                      onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} 
+                      placeholder="Enter new password"
+                    />
+                  </Box>
+
+                  {settingsMessage.text && (
+                    <Alert severity={settingsMessage.type} sx={{ mb: 2 }}>
+                      {settingsMessage.text}
+                    </Alert>
+                  )}
+
+                  <Button type="submit" disabled={settingsLoading} variant="contained" sx={{ textTransform: 'none', fontWeight: 'bold' }}>
+                    {settingsLoading ? 'Saving Changes...' : 'Save Settings'}
+                  </Button>
+                </form>
+              </Paper>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

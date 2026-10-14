@@ -19,7 +19,9 @@ import {
   Menu,
   MenuItem,
   Avatar,
-  Button
+  Button,
+  TextField,
+  Alert
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -35,7 +37,6 @@ const UserDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('docs');
   
-  // Profile Menu Anchor State
   const [anchorEl, setAnchorEl] = useState(null);
   const openMenu = Boolean(anchorEl);
 
@@ -44,7 +45,27 @@ const UserDashboard = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const [userSettingsName, setUserSettingsName] = useState('');
+  const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '' });
+  const [settingsMessage, setSettingsMessage] = useState({ text: '', type: '' });
+  const [settingsLoading, setSettingsLoading] = useState(false);
+
   const navigate = useNavigate();
+
+  // Session validation and data fetching on mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role')?.toLowerCase()?.trim();
+
+    // If no token or user is incorrectly flagged as admin, redirect to login
+    if (!token || role === 'admin') {
+      localStorage.clear();
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    fetchDashboardData();
+  }, [navigate]);
 
   const fetchDashboardData = async () => {
     try {
@@ -58,6 +79,7 @@ const UserDashboard = () => {
       const fetchedName = userRes.data?.userName || userRes.data?.name;
       if (fetchedName && !fetchedName.toLowerCase().includes('admin')) {
         localStorage.setItem('userName', fetchedName);
+        setUserSettingsName(fetchedName);
       }
 
       const docRes = await API.get('/documents/me');
@@ -67,16 +89,15 @@ const UserDashboard = () => {
       setAssets(assetRes.data);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error.response?.data?.message || error.message);
+      if (error.response?.status === 401) {
+        localStorage.clear();
+        navigate('/login', { replace: true });
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  // Strict username resolution: Prefers database name, ignores admin names and mobile numbers
   const storedName = localStorage.getItem('userName');
   const profileName = userProfile?.userName || userProfile?.name;
 
@@ -89,22 +110,44 @@ const UserDashboard = () => {
   const userName = rawName;
   const customId = userProfile?.customId || localStorage.getItem('customId') || 'N/A';
 
-  const handleProfileClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleProfileClose = () => {
-    setAnchorEl(null);
-  };
+  const handleProfileClick = (event) => setAnchorEl(event.currentTarget);
+  const handleProfileClose = () => setAnchorEl(null);
 
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login', { replace: true });
   };
 
-  if (loading) return <Box sx={{ p: 4, textAlign: 'center' }}><Typography>Loading dashboard...</Typography></Box>;
+  const handleSettingsUpdate = async (e) => {
+    e.preventDefault();
+    setSettingsLoading(true);
+    setSettingsMessage({ text: '', type: '' });
 
-  // Bulletproof case-insensitive check for uploaded documents
+    try {
+      await API.put('/auth/profile', {
+        name: userSettingsName,
+        currentPassword: passwords.currentPassword || undefined,
+        newPassword: passwords.newPassword || undefined
+      });
+      localStorage.setItem('userName', userSettingsName);
+      setSettingsMessage({ text: 'Profile settings updated successfully!', type: 'success' });
+      setPasswords({ currentPassword: '', newPassword: '' });
+      fetchDashboardData();
+    } catch (err) {
+      setSettingsMessage({ text: err.response?.data?.message || 'Failed to update profile settings.', type: 'error' });
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center', mt: 8 }}>
+        <Typography>Loading user portal...</Typography>
+      </Box>
+    );
+  }
+
   const requiredTypes = ['aadhaar', 'pan', 'dl'];
   const allDocumentsUploaded = requiredTypes.every(reqType => 
     documents.some(doc => {
@@ -119,8 +162,6 @@ const UserDashboard = () => {
 
   return (
     <Box sx={{ display: 'flex', bgcolor: '#f8fafc', minHeight: '100vh' }}>
-      
-      {/* SIDEBAR WITH HAMBURGER INSIDE HEADER */}
       <Drawer
         variant="permanent"
         sx={{
@@ -158,18 +199,24 @@ const UserDashboard = () => {
           <ListItemButton 
             selected={activeTab === 'assets'}
             onClick={() => setActiveTab('assets')}
-            sx={{ borderRadius: 2, '&.Mui-selected': { bgcolor: '#334155' } }}
+            sx={{ borderRadius: 2, mb: 1, '&.Mui-selected': { bgcolor: '#334155' } }}
           >
             <ListItemIcon sx={{ color: '#94a3b8', minWidth: 40 }}><FolderSharedIcon /></ListItemIcon>
             {sidebarOpen && <ListItemText primary="EV Assets" />}
           </ListItemButton>
+
+          <ListItemButton 
+            selected={activeTab === 'settings'}
+            onClick={() => setActiveTab('settings')}
+            sx={{ borderRadius: 2, '&.Mui-selected': { bgcolor: '#334155' } }}
+          >
+            <ListItemIcon sx={{ color: '#94a3b8', minWidth: 40 }}><SettingsIcon /></ListItemIcon>
+            {sidebarOpen && <ListItemText primary="Profile Settings" />}
+          </ListItemButton>
         </List>
       </Drawer>
 
-      {/* MAIN CONTENT AREA */}
       <Box component="main" sx={{ flexGrow: 1, p: 4 }}>
-        
-        {/* TOP BAR WITH PROFILE DROPDOWN ICON */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 4 }}>
           <IconButton onClick={handleProfileClick} sx={{ p: 0 }}>
             <Avatar sx={{ bgcolor: '#1976d2', width: 40, height: 40, fontWeight: 'bold' }}>
@@ -177,16 +224,16 @@ const UserDashboard = () => {
             </Avatar>
           </IconButton>
 
-          {/* USER PROFILE DROPDOWN MENU */}
           <Menu
             anchorEl={anchorEl}
             open={openMenu}
             onClose={handleProfileClose}
-            onClick={handleProfileClose}
             transformOrigin={{ horizontal: 'right', vertical: 'top' }}
             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            PaperProps={{
-              sx: { width: 220, mt: 1.5, p: 1, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }
+            slotProps={{
+              paper: {
+                sx: { width: 220, mt: 1.5, p: 1, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }
+              }
             }}
           >
             <Box sx={{ px: 2, py: 1.5 }}>
@@ -194,7 +241,7 @@ const UserDashboard = () => {
               <Typography variant="caption" color="text.secondary">ID: {customId}</Typography>
             </Box>
             <Divider sx={{ my: 1 }} />
-            <MenuItem onClick={() => alert('Profile settings coming soon!')} sx={{ gap: 1.5, borderRadius: 1 }}>
+            <MenuItem onClick={() => { setActiveTab('settings'); handleProfileClose(); }} sx={{ gap: 1.5, borderRadius: 1 }}>
               <SettingsIcon fontSize="small" color="action" /> Profile Settings
             </MenuItem>
             <MenuItem onClick={handleLogout} sx={{ gap: 1.5, borderRadius: 1, color: 'error.main' }}>
@@ -203,7 +250,6 @@ const UserDashboard = () => {
           </Menu>
         </Box>
 
-        {/* TAB CONTENTS */}
         {activeTab === 'docs' && (
           <Box>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
@@ -290,6 +336,68 @@ const UserDashboard = () => {
                 ))}
               </Grid>
             )}
+          </Box>
+        )}
+
+        {activeTab === 'settings' && (
+          <Box>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Profile Settings
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Manage your account credentials and personal display name.
+            </Typography>
+
+            <Paper sx={{ p: 4, borderRadius: 2, border: '1px solid #e2e8f0', maxWidth: 600 }}>
+              <form onSubmit={handleSettingsUpdate}>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Full Name / Display Name</Typography>
+                  <TextField 
+                    fullWidth 
+                    size="small"
+                    value={userSettingsName} 
+                    onChange={(e) => setUserSettingsName(e.target.value)} 
+                    required 
+                  />
+                </Box>
+
+                <Divider sx={{ my: 3 }} />
+
+                <Typography variant="h6" fontWeight="bold" gutterBottom>Change Password</Typography>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Current Password</Typography>
+                  <TextField 
+                    fullWidth 
+                    type="password"
+                    size="small"
+                    value={passwords.currentPassword} 
+                    onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} 
+                    placeholder="Enter current password"
+                  />
+                </Box>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>New Password</Typography>
+                  <TextField 
+                    fullWidth 
+                    type="password"
+                    size="small"
+                    value={passwords.newPassword} 
+                    onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} 
+                    placeholder="Enter new password"
+                  />
+                </Box>
+
+                {settingsMessage.text && (
+                  <Alert severity={settingsMessage.type} sx={{ mb: 2 }}>
+                    {settingsMessage.text}
+                  </Alert>
+                )}
+
+                <Button type="submit" disabled={settingsLoading} variant="contained" sx={{ textTransform: 'none', fontWeight: 'bold' }}>
+                  {settingsLoading ? 'Saving Changes...' : 'Save Profile Settings'}
+                </Button>
+              </form>
+            </Paper>
           </Box>
         )}
       </Box>
