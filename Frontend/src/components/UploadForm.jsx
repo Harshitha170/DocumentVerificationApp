@@ -1,129 +1,93 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
+import { Box, TextField, Button, Typography, Alert } from '@mui/material';
 import API from '../services/api.js';
 
-const UploadForm = ({ onUploadSuccess }) => {
-  const [docType, setDocType] = useState('Aadhar');
+const AdminAssetUpload = ({ onAssetUploaded }) => {
+  const [assetId, setAssetId] = useState('');
+  const [title, setTitle] = useState('');
   const [file, setFile] = useState(null);
-  const [uploadedTypes, setUploadedTypes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  
-  // Ref for the file input element to clear it after upload
-  const fileInputRef = useRef(null);
-  
-  // Ref to track the active timeout so we can clear it if a new upload starts
-  const timeoutRef = useRef(null);
+  const [message, setMessage] = useState({ text: '', type: '' });
 
-  const allDocTypes = ['Aadhar', 'Pan', 'DL'];
-  const availableOptions = allDocTypes.filter(type => !uploadedTypes.includes(type));
-
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
-  const handleUpload = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!file) {
-      alert('Please select a file to upload.');
+      setMessage({ text: 'Please select a file to upload.', type: 'error' });
       return;
     }
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
     setLoading(true);
-    setMessage('');
+    setMessage({ text: '', type: '' });
 
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('docType', docType);
+    formData.append('file', file); // 👈 MUST be 'file' to match backend upload.single('file')
+    formData.append('assetId', assetId);
+    formData.append('title', title);
 
     try {
-      await API.post('/documents/upload', formData, {
+      await API.post('/assets', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      setMessage(`${docType} uploaded successfully!`);
-      setUploadedTypes([...uploadedTypes, docType]);
+      setMessage({ text: 'Asset uploaded successfully!', type: 'success' });
+      setAssetId('');
+      setTitle('');
       setFile(null);
-
-      // Clear the file input visually in the browser DOM
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
-      timeoutRef.current = setTimeout(() => {
-        setMessage('');
-      }, 5000);
-
-      const remaining = availableOptions.filter(t => t !== docType);
-      if (remaining.length > 0) {
-        setDocType(remaining[0]);
-      }
-
-      if (onUploadSuccess) onUploadSuccess();
-
+      
+      if (onAssetUploaded) onAssetUploaded();
     } catch (err) {
-      setMessage(err.response?.data?.message || 'Upload failed.');
+      setMessage({ text: err.response?.data?.message || 'Failed to upload asset.', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
-  const isComplete = uploadedTypes.length === 3;
-
   return (
-    <div style={{ maxWidth: '450px', margin: '20px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '5px' }}>
-      <h3>Upload Verification Documents</h3>
+    <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 500, p: 3, bgcolor: '#fff', borderRadius: 2, border: '1px solid #e2e8f0' }}>
+      <Typography variant="h6" fontWeight="bold" gutterBottom>Upload New EV Asset</Typography>
+      
+      <Box sx={{ mb: 2 }}>
+        <TextField 
+          fullWidth 
+          size="small"
+          label="Asset ID (e.g., EV-SPEC-101)" 
+          value={assetId} 
+          onChange={(e) => setAssetId(e.target.value)} 
+          required 
+        />
+      </Box>
 
-      {isComplete ? (
-        <div style={{ padding: '15px', backgroundColor: '#e6ffed', color: '#27ae60', textAlign: 'center', borderRadius: '4px' }}>
-          <strong>All documents uploaded successfully!</strong> Submitted for verification.
-        </div>
-      ) : (
-        <form onSubmit={handleUpload}>
-          <div style={{ marginBottom: '15px' }}>
-            <label>Select Document Type:</label><br />
-            <select 
-              value={docType} 
-              onChange={(e) => setDocType(e.target.value)} 
-              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-            >
-              {availableOptions.map(type => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-          </div>
+      <Box sx={{ mb: 2 }}>
+        <TextField 
+          fullWidth 
+          size="small"
+          label="Title / Description" 
+          value={title} 
+          onChange={(e) => setTitle(e.target.value)} 
+          required 
+        />
+      </Box>
 
-          <div style={{ marginBottom: '15px' }}>
-            <label>Select File:</label><br />
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              required 
-              style={{ width: '100%', marginTop: '5px' }}
-            />
-          </div>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Select Document / PDF</Typography>
+        <input 
+          type="file" 
+          onChange={(e) => setFile(e.target.files[0])} 
+          required 
+        />
+      </Box>
 
-          {message && <p style={{ color: message.includes('successfully') ? 'green' : 'red' }}>{message}</p>}
-
-          <button 
-            type="submit" 
-            disabled={loading} 
-            style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
-          >
-            {loading ? 'Uploading...' : `Upload ${docType}`}
-          </button>
-        </form>
+      {message.text && (
+        <Alert severity={message.type} sx={{ mb: 2 }}>
+          {message.text}
+        </Alert>
       )}
 
-      <div style={{ marginTop: '15px', fontSize: '14px', color: '#666' }}>
-        <strong>Uploaded:</strong> {uploadedTypes.length > 0 ? uploadedTypes.join(', ') : 'None yet'} (3 required)
-      </div>
-    </div>
+      <Button type="submit" disabled={loading} variant="contained" fullWidth sx={{ textTransform: 'none', fontWeight: 'bold' }}>
+        {loading ? 'Uploading Asset...' : 'Publish Asset'}
+      </Button>
+    </Box>
   );
 };
 
-export default UploadForm;
+export default AdminAssetUpload;

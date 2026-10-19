@@ -412,9 +412,20 @@ const AdminDashboard = () => {
                     <Box key={asset._id} sx={{ py: 1, borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="body2"><strong>{asset.assetId}</strong>: {asset.title}</Typography>
                       {asset.fileUrl && (
-                        <Button href={asset.fileUrl} target="_blank" rel="noreferrer" size="small" variant="text" sx={{ textTransform: 'none' }}>
-                          [View File]
-                        </Button>
+                        <Button 
+    href={
+      asset.fileUrl.startsWith('http') 
+        ? asset.fileUrl 
+        : `http://localhost:5000${asset.fileUrl.startsWith('/') ? '' : '/'}${asset.fileUrl}`
+    } 
+    target="_blank" 
+    rel="noopener noreferrer" 
+    variant="text" 
+    size="small"
+    sx={{ mt: 1, textTransform: 'none', fontWeight: 'bold' }}
+  >
+    View / Download File →
+  </Button>
                       )}
                     </Box>
                   ))}

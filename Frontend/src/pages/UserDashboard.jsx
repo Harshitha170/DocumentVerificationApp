@@ -320,15 +320,19 @@ const UserDashboard = () => {
                         <Typography variant="h6" gutterBottom>{asset.title}</Typography>
                         {asset.fileUrl && (
                           <Button 
-                            href={asset.fileUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            variant="text" 
-                            size="small"
-                            sx={{ mt: 1, textTransform: 'none', fontWeight: 'bold' }}
-                          >
-                            View / Download File →
-                          </Button>
+    href={
+      asset.fileUrl.startsWith('http') 
+        ? asset.fileUrl 
+        : `http://localhost:5000${asset.fileUrl.startsWith('/') ? '' : '/'}${asset.fileUrl}`
+    } 
+    target="_blank" 
+    rel="noopener noreferrer" 
+    variant="text" 
+    size="small"
+    sx={{ mt: 1, textTransform: 'none', fontWeight: 'bold' }}
+  >
+    View / Download File →
+  </Button>
                         )}
                       </CardContent>
                     </Card>
