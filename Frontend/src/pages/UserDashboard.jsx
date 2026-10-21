@@ -331,7 +331,7 @@ const UserDashboard = () => {
     size="small"
     sx={{ mt: 1, textTransform: 'none', fontWeight: 'bold' }}
   >
-    View / Download File →
+    View File →
   </Button>
                         )}
                       </CardContent>

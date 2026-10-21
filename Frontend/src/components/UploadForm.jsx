@@ -20,7 +20,7 @@ const AdminAssetUpload = ({ onAssetUploaded }) => {
     setMessage({ text: '', type: '' });
 
     const formData = new FormData();
-    formData.append('file', file); // 👈 MUST be 'file' to match backend upload.single('file')
+    formData.append('file', file); 
     formData.append('assetId', assetId);
     formData.append('title', title);
 
