@@ -43,51 +43,51 @@ const AdminAssetUpload = ({ onAssetUploaded }) => {
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 500, p: 3, bgcolor: '#fff', borderRadius: 2, border: '1px solid #e2e8f0' }}>
-      <Typography variant="h6" fontWeight="bold" gutterBottom>Upload New EV Asset</Typography>
-      
-      <Box sx={{ mb: 2 }}>
-        <TextField 
-          fullWidth 
-          size="small"
-          label="Asset ID (e.g., EV-SPEC-101)" 
-          value={assetId} 
-          onChange={(e) => setAssetId(e.target.value)} 
-          required 
-        />
-      </Box>
+<Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 500, p: 3, bgcolor: '#fff', borderRadius: 2, border: '1px solid #e2e8f0' }}>
+  <Typography variant="h6" fontWeight="bold" gutterBottom>Upload New EV Asset</Typography>
+  
+  <Box sx={{ mb: 2 }}>
+    <TextField 
+      fullWidth 
+      size="small"
+      label="Asset ID (e.g., EV-SPEC-101)" 
+      value={assetId} 
+      onChange={(e) => setAssetId(e.target.value)} 
+      required 
+    />
+  </Box>
 
-      <Box sx={{ mb: 2 }}>
-        <TextField 
-          fullWidth 
-          size="small"
-          label="Title / Description" 
-          value={title} 
-          onChange={(e) => setTitle(e.target.value)} 
-          required 
-        />
-      </Box>
+  <Box sx={{ mb: 2 }}>
+    <TextField 
+      fullWidth 
+      size="small"
+      label="Title / Description" 
+      value={title} 
+      onChange={(e) => setTitle(e.target.value)} 
+      required 
+    />
+  </Box>
 
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Select Document / PDF</Typography>
-        <input 
-          type="file" 
-          onChange={(e) => setFile(e.target.files[0])} 
-          required 
-        />
-      </Box>
+  <Box sx={{ mb: 2 }}>
+    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Select Document / PDF</Typography>
+    <input 
+      type="file" 
+      onChange={(e) => setFile(e.target.files[0])} 
+      required 
+    />
+  </Box>
 
-      {message.text && (
-        <Alert severity={message.type} sx={{ mb: 2 }}>
-          {message.text}
-        </Alert>
-      )}
+  {message.text && (
+    <Alert severity={message.type} sx={{ mb: 2 }}>
+      {message.text}
+    </Alert>
+  )}
 
-      <Button type="submit" disabled={loading} variant="contained" fullWidth sx={{ textTransform: 'none', fontWeight: 'bold' }}>
-        {loading ? 'Uploading Asset...' : 'Publish Asset'}
-      </Button>
-    </Box>
-  );
+  <Button type="submit" disabled={loading} variant="contained" fullWidth sx={{ textTransform: 'none', fontWeight: 'bold' }}>
+    {loading ? 'Uploading Asset...' : 'Publish Asset'}
+  </Button>
+</Box>
+);
 };
 
 export default AdminAssetUpload;

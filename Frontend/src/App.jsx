@@ -7,6 +7,8 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Unauthorized from './pages/Unauthorized.jsx';
 import Register from './pages/Register.jsx';
 import Landing from './pages/LandingPage.jsx';
+import AssetDetailsPage from './pages/AssetDetailsPage.jsx';
+
 
 function App() {
   return (
@@ -23,6 +25,7 @@ function App() {
         {/* Regular User Protected Route */}
         <Route element={<ProtectedRoute allowedRole="user" />}>
           <Route path="/dashboard" element={<UserDashboard />} />
+          <Route path="/assets/:id" element={<AssetDetailsPage />} />
         </Route>
 
         {/* Admin Protected Route */}

@@ -7,7 +7,7 @@ const Landing = () => {
     <div 
       className="center-container" 
       style={{ 
-        backgroundImage: `url('https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=1920&auto=format&fit=crop')` // Modern Electric Vehicle (EV) image
+        backgroundImage: `url('https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=1920&auto=format&fit=crop')` 
       }}
     >
       <div className="overlay"></div>

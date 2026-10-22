@@ -14,18 +14,25 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST new asset (Admin upload) - 2. Add upload.single('file') middleware here!
-router.post('/', upload.single('file'), async (req, res) => {
+// POST new asset (Admin upload) and Add upload.single('file') middleware here!
+router.post('/', upload.fields([
+  {name: 'image', maxCount: 1},
+  {name: 'document', maxCount:1}
+      ]), async (req, res) => {
   try {
-    const { assetId, title } = req.body;
+    const { assetId, title, batteryType,manufacturedDate, status } = req.body;
     
-    // Now req.file and req.body are correctly parsed by multer
-    const fileUrl = req.file ? `/uploads/${req.file.filename}` : req.body.fileUrl;
-
+    //  req.file and req.body are correctly parsed by multer
+    const imagePath = req.files?.image ? `/uploads/${req.files.image[0].filename}` : '';
+    const documentPath = req.files?.document ? `/uploads/${req.files.document[0].filename}` : '';
     const newAsset = new Asset({
       assetId,
       title,
-      fileUrl: fileUrl || 'https://example.com/placeholder-file.pdf'
+      image: imagePath,
+      batteryType,
+      manufacturedDate,
+      document: documentPath || 'https://example.com/placeholder-file.pdf',
+      status: status || 'Available'
     });
 
     const savedAsset = await newAsset.save();

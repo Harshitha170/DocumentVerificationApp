@@ -65,7 +65,7 @@ const loginUser = async (req, res) => {
         return res.status(200).json({
             message: "Login Successful",
             token,
-            customId: user.customId, // <-- Sent explicitly for frontend storage
+            customId: user.customId, 
             user: {
                 id: user._id,
                 userName: user.userName,

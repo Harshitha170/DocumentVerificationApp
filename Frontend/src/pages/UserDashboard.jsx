@@ -1,27 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Drawer, 
-  Toolbar, 
-  Typography, 
-  IconButton, 
-  List, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
-  Paper, 
-  Grid, 
-  Card, 
-  CardContent, 
-  Chip, 
-  Divider,
-  Menu,
-  MenuItem,
-  Avatar,
-  Button,
-  TextField,
-  Alert
+import { Box, Drawer, Toolbar, Typography, IconButton, List, ListItemButton, ListItemIcon, ListItemText, 
+  Paper, Grid, Card, CardContent, CardMedia, Chip, Divider, Menu, MenuItem, Avatar,
+  Button, TextField, Alert
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -138,6 +119,12 @@ const UserDashboard = () => {
     } finally {
       setSettingsLoading(false);
     }
+  };
+
+  const getFullUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    return `http://localhost:5000${path.startsWith('/') ? '' : '/'}${path}`;
   };
 
   if (loading) {
@@ -302,10 +289,10 @@ const UserDashboard = () => {
         {activeTab === 'assets' && (
           <Box>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              EV Assets & Guidelines
+              EV Assets & Fleet
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Access official documents, vehicle information specs, and media uploaded by the administrator.
+              Browse available electric vehicles, check specifications, and rent vehicles.
             </Typography>
 
             {assets.length === 0 ? (
@@ -314,26 +301,40 @@ const UserDashboard = () => {
               <Grid container spacing={3}>
                 {assets.map((asset) => (
                   <Grid item xs={12} sm={6} md={4} key={asset._id}>
-                    <Card sx={{ height: '100%', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                      <CardContent>
-                        <Chip label={asset.assetId} size="small" sx={{ fontWeight: 'bold', mb: 1 }} />
-                        <Typography variant="h6" gutterBottom>{asset.title}</Typography>
-                        {asset.fileUrl && (
-                          <Button 
-    href={
-      asset.fileUrl.startsWith('http') 
-        ? asset.fileUrl 
-        : `http://localhost:5000${asset.fileUrl.startsWith('/') ? '' : '/'}${asset.fileUrl}`
-    } 
-    target="_blank" 
-    rel="noopener noreferrer" 
-    variant="text" 
-    size="small"
-    sx={{ mt: 1, textTransform: 'none', fontWeight: 'bold' }}
-  >
-    View File →
-  </Button>
-                        )}
+                    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', borderRadius: 2 }}>
+                      {asset.image && (
+                        <CardMedia
+                          component="img"
+                          height="180"
+                          image={getFullUrl(asset.image)}
+                          alt={asset.title}
+                          sx={{ objectFit: 'cover' }}
+                        />
+                      )}
+                      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                            <Chip label={asset.assetId} size="small" sx={{ fontWeight: 'bold' }} />
+                            <Chip 
+                              label={asset.status || 'Available'} 
+                              size="small" 
+                              color={asset.status === 'NotAvailable' ? 'error' : 'success'} 
+                            />
+                          </Box>
+                          <Typography variant="h6" fontWeight="bold" gutterBottom>{asset.title}</Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                            Battery: {asset.batteryType || 'N/A'}
+                          </Typography>
+                        </Box>
+                        <Button 
+                          variant="contained" 
+                          size="small"
+                          fullWidth
+                          onClick={() => navigate(`/assets/${asset._id}`)}
+                          sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                        >
+                          View Details & Rent →
+                        </Button>
                       </CardContent>
                     </Card>
                   </Grid>

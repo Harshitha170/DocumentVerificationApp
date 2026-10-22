@@ -2,15 +2,15 @@ import { User } from '../models/user.model.js';
 import { Document } from '../models/document.model.js';
 import { sendVerificationEmail } from '../utils/sendEmail.js';
 
-// Get all users and their documents for the admin queue
+// Fetching all users and their documents for the admin to check
 export const getPendingDocuments = async (req, res) => {
     try {
-        // Fetch only non-admin users (role: 'user') and select customId explicitly
+        // Fetching only users
         const users = await User.find({ role: { $ne: 'admin' } }).select('-password').lean();
         
         const allDocuments = await Document.find({}).lean();
 
-        // Map documents to their respective users and include customId
+        // Mapping documents to their respective users and include customId
         let usersWithDocs = users.map(user => {
             const userDocs = allDocuments.filter(doc => {
                 const docUserRef = doc.userId || doc.user;
@@ -27,7 +27,7 @@ export const getPendingDocuments = async (req, res) => {
             };
         });
 
-        // Filter out users who have NO documents uploaded yet so the queue stays tidy
+        // Filtering out users who have NO documents uploaded yet.
         usersWithDocs = usersWithDocs.filter(user => user.documents.length > 0);
 
         return res.status(200).json(usersWithDocs);
@@ -41,7 +41,7 @@ export const getPendingDocuments = async (req, res) => {
 export const updateDocumentStatus = async (req, res) => {
     try {
         const { documentId } = req.params;
-        const { status, rejectedReason } = req.body; // Expects 'Approved' or 'Rejected'
+        const { status, rejectedReason } = req.body; // This Expects 'Approved' or 'Rejected'
 
         const document = await Document.findById(documentId);
         if (!document) {
@@ -57,7 +57,7 @@ export const updateDocumentStatus = async (req, res) => {
 
         let emailStatus = "Email sent successfully";
 
-        // Try sending email, but DO NOT crash the request if email fails
+        // sending email
         try {
             const user = await User.findById(document.userId);
             if (user && user.email) {

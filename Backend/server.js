@@ -1,12 +1,9 @@
 import 'dotenv/config';
-
 import express from 'express';
 
 import cors from 'cors';
 import {app} from './app.js'
 import connectDb from './config/db.js';
-
-
 
 connectDb()
 .then(() => {

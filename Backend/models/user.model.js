@@ -37,7 +37,6 @@ const userSchema = new Schema({
     }
 }, { timestamps: true });
 
-// Auto-increment middleware for customId (using async/await without 'next')
 userSchema.pre('save', async function () {
     if (!this.isNew) return;
 
@@ -50,7 +49,7 @@ userSchema.pre('save', async function () {
 
         this.customId = `ENWEB${counter.seq}`;
     } catch (error) {
-        throw error; // Mongoose will catch this and pass it to your registration error handler
+        throw error; // Mongoose will catch this and pass it to registration error handler
     }
 });
 

@@ -1,4 +1,3 @@
-// src/routes/document.routes.js
 import { Router } from 'express';
 import { uploadDocuments } from '../controllers/authController.js';
 import upload from '../middlewares/multer.middlewares.js';

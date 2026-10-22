@@ -8,16 +8,16 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 })
 
-const uploadOnCloudinary = async(localFilePath) => {  //localFilePath is an argument
+const uploadOnCloudinary = async(localFilePath) => { 
     try {
         if(!localFilePath) return null
 
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "auto"
-        }) //cloudinary.uploader.opload  .. will send file from local temp folder up to the cloudinary.
+        }) //cloudinary.uploader.upload -- will send file from local temp folder up to the cloudinary.
         
 
-        fs.unlinkSync(localFilePath) // once th efile uploaded to the cloud, this line delete the temporary file from our  local server's harddrive
+        fs.unlinkSync(localFilePath) // once th efile uploaded to the cloud, this line delete the temporary file from our local server's harddrive
         return response; // returns the repsonse obj from cloudinary , which contains the secure URL 
 
 

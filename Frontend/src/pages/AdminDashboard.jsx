@@ -51,8 +51,16 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [assetData, setAssetData] = useState({ assetId: '', title: '' });
-  const [assetFile, setAssetFile] = useState(null);
+  // Updated Asset Form State
+  const [assetData, setAssetData] = useState({ 
+    assetId: '', 
+    title: '', 
+    batteryType: '', 
+    manufacturedDate: '', 
+    status: 'Available' 
+  });
+  const [assetImage, setAssetImage] = useState(null);
+  const [assetDocument, setAssetDocument] = useState(null);
   const [assetLoading, setAssetLoading] = useState(false);
   const [assetMessage, setAssetMessage] = useState('');
   const [assets, setAssets] = useState([]);
@@ -111,8 +119,8 @@ const AdminDashboard = () => {
     setAssetLoading(true);
     setAssetMessage('');
 
-    if (!assetFile) {
-      setAssetMessage('Please select a file to upload.');
+    if (!assetImage || !assetDocument) {
+      setAssetMessage('Please select both an asset image and an asset document.');
       setAssetLoading(false);
       return;
     }
@@ -120,15 +128,22 @@ const AdminDashboard = () => {
     const formData = new FormData();
     formData.append('assetId', assetData.assetId.trim());
     formData.append('title', assetData.title.trim());
-    formData.append('file', assetFile);
+    formData.append('batteryType', assetData.batteryType.trim());
+    formData.append('manufacturedDate', assetData.manufacturedDate);
+    formData.append('status', assetData.status);
+    formData.append('image', assetImage);
+    formData.append('document', assetDocument);
 
     try {
       await API.post('/assets', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setAssetMessage('Asset uploaded successfully!');
-      setAssetData({ assetId: '', title: '' });
-      setAssetFile(null);
+      setAssetData({ assetId: '', title: '', batteryType: '', manufacturedDate: '', status: 'Available' });
+      setAssetImage(null);
+      setAssetDocument(null);
+      // Reset HTML file inputs
+      e.target.reset();
       fetchAssets();
     } catch (err) {
       setAssetMessage(err.response?.data?.message || 'Failed to upload asset.');
@@ -359,7 +374,7 @@ const AdminDashboard = () => {
                 EV Assets Management
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Upload vehicle info guides, specs, or images to display on all user dashboards.
+                Upload vehicle details, specs, images, and documents to display on user dashboards.
               </Typography>
               
               <Paper sx={{ p: 3, mb: 4, borderRadius: 2, border: '1px solid #e2e8f0', maxWidth: 600 }}>
@@ -382,17 +397,58 @@ const AdminDashboard = () => {
                       type="text" 
                       value={assetData.title} 
                       onChange={(e) => setAssetData({ ...assetData, title: e.target.value })} 
-                      placeholder="e.g. Fleet Vehicle Compliance Guide" 
+                      placeholder="e.g. Ather 450X Gen 3" 
                       required 
                       style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box' }}
                     />
                   </Box>
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Upload File (PDF / Image)</Typography>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Battery Type</Typography>
+                    <input 
+                      type="text" 
+                      value={assetData.batteryType} 
+                      onChange={(e) => setAssetData({ ...assetData, batteryType: e.target.value })} 
+                      placeholder="e.g. Lithium-ion 3.7 kWh" 
+                      required 
+                      style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box' }}
+                    />
+                  </Box>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Manufactured Date</Typography>
+                    <input 
+                      type="date" 
+                      value={assetData.manufacturedDate} 
+                      onChange={(e) => setAssetData({ ...assetData, manufacturedDate: e.target.value })} 
+                      required 
+                      style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box' }}
+                    />
+                  </Box>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Availability Status</Typography>
+                    <select 
+                      value={assetData.status} 
+                      onChange={(e) => setAssetData({ ...assetData, status: e.target.value })}
+                      style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box', backgroundColor: '#fff' }}
+                    >
+                      <option value="Available">Available</option>
+                      <option value="NotAvailable">NotAvailable</option>
+                    </select>
+                  </Box>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Upload Asset Image</Typography>
                     <input 
                       type="file" 
-                      onChange={(e) => setAssetFile(e.target.files[0])} 
-                      accept=".pdf,image/*" 
+                      onChange={(e) => setAssetImage(e.target.files[0])} 
+                      accept="image/*" 
+                      required 
+                    />
+                  </Box>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="body2" fontWeight="600" sx={{ mb: 1 }}>Upload Vehicle Document (PDF)</Typography>
+                    <input 
+                      type="file" 
+                      onChange={(e) => setAssetDocument(e.target.files[0])} 
+                      accept=".pdf,application/pdf" 
                       required 
                     />
                   </Box>
@@ -408,27 +464,35 @@ const AdminDashboard = () => {
                 <Typography variant="body2" color="text.secondary">No assets uploaded yet.</Typography>
               ) : (
                 <List sx={{ bgcolor: '#fff', borderRadius: 2, border: '1px solid #e2e8f0', p: 2 }}>
-                  {assets.map((asset) => (
-                    <Box key={asset._id} sx={{ py: 1, borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="body2"><strong>{asset.assetId}</strong>: {asset.title}</Typography>
-                      {asset.fileUrl && (
-                        <Button 
-    href={
-      asset.fileUrl.startsWith('http') 
-        ? asset.fileUrl 
-        : `http://localhost:5000${asset.fileUrl.startsWith('/') ? '' : '/'}${asset.fileUrl}`
-    } 
-    target="_blank" 
-    rel="noopener noreferrer" 
-    variant="text" 
-    size="small"
-    sx={{ mt: 1, textTransform: 'none', fontWeight: 'bold' }}
-  >
-    View / Download File →
-  </Button>
-                      )}
-                    </Box>
-                  ))}
+                  {assets.map((asset) => {
+                    const docPath = asset.document || asset.fileUrl;
+                    return (
+                      <Box key={asset._id} sx={{ py: 1.5, borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box>
+                          <Typography variant="body2"><strong>{asset.assetId}</strong>: {asset.title}</Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                            Battery: {asset.batteryType || 'N/A'} | Status: {asset.status || 'Available'}
+                          </Typography>
+                        </Box>
+                        {docPath && (
+                          <Button 
+                            href={
+                              docPath.startsWith('http') 
+                                ? docPath 
+                                : `http://localhost:5000${docPath.startsWith('/') ? '' : '/'}${docPath}`
+                            } 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            variant="text" 
+                            size="small"
+                            sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                          >
+                            View Document →
+                          </Button>
+                        )}
+                      </Box>
+                    );
+                  })}
                 </List>
               )}
             </Box>
