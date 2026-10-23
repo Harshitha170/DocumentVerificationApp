@@ -63,11 +63,12 @@ const AssetDetailsPage = () => {
             Back to Dashboard
           </Button>
         </Box>
+
       </Container>
     );
   }
 
-  // Calculate pricing based on duration choice
+  // Calculate pricing
   const rentPrice = duration === '1week' ? 2200 : 4000;
   const isAvailable = asset.status === 'Available';
 
@@ -104,7 +105,7 @@ const AssetDetailsPage = () => {
       <Paper sx={{ p: 4, borderRadius: 3, border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
         <Grid container spacing={4}>
           {/* LEFT SIDE: Asset Image */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{xs:12, md:6}}>
             <Box 
               sx={{ 
                 width: '100%', 
@@ -127,7 +128,7 @@ const AssetDetailsPage = () => {
           </Grid>
 
           {/* RIGHT SIDE: Details & Controls */}
-          <Grid item xs={12} md={6} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <Grid size={{ xs: 12, md:6}} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'bold' }}>
@@ -141,21 +142,21 @@ const AssetDetailsPage = () => {
                 />
               </Box>
 
-              <Typography variant="h5" fontWeight="bold" sx={{ mb: 2, color: '#1e293b' }}>
+              <Typography variant="h5" fontWeight="bold" sx={{ mb: 2, color: '#3207f1' }}>
                 {asset.title}
               </Typography>
 
               <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CalendarTodayIcon fontSize="small" color="action" />
+                  <CalendarTodayIcon fontSize="small" color="rgb(194 10 10)" />
                   <Typography variant="body2" color="text.secondary">
-                    Manufactured: <strong>{new Date(asset.manufacturedDate).toLocaleDateString()}</strong>
+                    Manufactured:  <strong>{new Date(asset.manufacturedDate).toLocaleDateString()}</strong>
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <FlashOnIcon fontSize="small" color="action" />
-                  <Typography variant="body2" color="text.secondary">
-                    Battery: <strong>{asset.batteryType}</strong>
+                  <FlashOnIcon fontSize="small" color="rgb(194 10 10)"/>
+                  <Typography variant="body2" color="text.seconday">
+                    Battery:  <strong>{asset.batteryType}</strong>
                   </Typography>
                 </Box>
               </Box>
@@ -182,7 +183,7 @@ const AssetDetailsPage = () => {
               </Box>
 
               {/* Price Calculation Display */}
-              <Box sx={{ mb: 3, p: 2, bgcolor: '#f1f5f9', borderRadius: 2 }}>
+              <Box sx={{ mb: 3, p: 2, bgcolor: '#abf386', borderRadius: 2 }}>
                 <Typography variant="caption" color="text.secondary">Total Payable Amount</Typography>
                 <Typography variant="h4" fontWeight="bold" color="primary.main">
                   ₹{rentPrice.toLocaleString()} <Typography component="span" variant="body2" color="text.secondary">INR</Typography>
@@ -198,7 +199,7 @@ const AssetDetailsPage = () => {
                     rel="noopener noreferrer" 
                     startIcon={<DescriptionIcon />}
                     variant="outlined" 
-                    color="info"
+                    color="warning"
                     size="small"
                     sx={{ textTransform: 'none', fontWeight: 'bold' }}
                   >
@@ -209,16 +210,40 @@ const AssetDetailsPage = () => {
             </Box>
 
             {/* RENT Button */}
-            <Button 
-              onClick={handleRentNow} 
-              disabled={!isAvailable} 
-              variant="contained" 
-              size="large" 
-              fullWidth
-              sx={{ py: 1.5, textTransform: 'none', fontWeight: 'bold', fontSize: '1rem', borderRadius: 2 }}
-            >
-              {isAvailable ? 'RENT NOW' : 'Currently Unavailable'}
-            </Button>
+           <Button 
+  onClick={handleRentNow} 
+  disabled={!isAvailable} 
+  variant="contained" 
+  size="large" 
+  fullWidth
+  sx={{ 
+    py: 1.5, 
+    textTransform: 'none', 
+    fontWeight: 'bold', 
+    fontSize: '1rem', 
+    borderRadius: 2,
+    backgroundColor: '#1976d2', 
+    color: '#fff',
+    transition: 'all 0.3s ease-in-out',
+    
+    '&:hover': {
+      background: 'linear-gradient(45deg, #FF4500 30%, #FF0000 90%)', 
+      transform: 'translateY(-2px)',
+      boxShadow: '0 6px 20px rgba(255, 69, 0, 0.4)',
+    },
+    '&:disabled': {
+      backgroundColor: '#e0e0e0',
+      color: '#a1a1a1',
+      backgroundImage: 'none',
+      boxShadow: 'none',
+      transform: 'none',
+    }
+  }}
+>
+  {isAvailable ? 'RENT NOW' : 'Currently Unavailable'}
+</Button>
+
+
           </Grid>
         </Grid>
       </Paper>

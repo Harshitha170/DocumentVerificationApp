@@ -14,6 +14,17 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/:id', async(req, res)=> {
+  try{
+    const asset =  await Asset.findById(req.params.id);
+    if(!asset){
+      return res.status(404).json({message: 'Asset not found'});
+    }
+    res.status(200).json(asset);
+  }catch(error){
+    res.status(500).json({message: error.message});
+  }
+});
 // POST new asset (Admin upload) and Add upload.single('file') middleware here!
 router.post('/', upload.fields([
   {name: 'image', maxCount: 1},
